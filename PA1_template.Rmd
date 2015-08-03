@@ -40,13 +40,23 @@ unzip(zipfile = "activity.zip")
 
 # Missing values are correctly handled by default 'NA',
 # but dates need will be forced to strings and then converted
+# using dplyr and lubridate.
 activity <- read.csv("activity.csv", stringsAsFactors = FALSE)
-activity 
+activity <- mutate(activity, date = ymd(date))
+
 ```
 
 
 ## What is mean total number of steps taken per day?
-
+```{r}
+# Get an atomic vector of daily steps, NAs removed
+dailysteps <- activity %>% 
+  group_by(date) %>% 
+  summarise_each(funs(sum)) %>% 
+  select(steps) %>% 
+  unlist %>% 
+  na.omit
+```
 
 
 ## What is the average daily activity pattern?
