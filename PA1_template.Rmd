@@ -14,9 +14,9 @@ library(knitr) # Adding this here makes RStudio's Knit HTML button work
 # https://class.coursera.org/repdata-036/forum/thread?thread_id=83
 opts_chunk$set(echo = TRUE,
                message = FALSE, warning = FALSE,
-               cache = FALSE#, # maybe make this true in the end?
-               #cache.path = "cache/", 
-               #fig.path = "figure/"
+               cache = FALSE,#, # maybe make this true in the end?
+               cache.path = "cache/", 
+               fig.path = "figure/"
                )
 ```
 
@@ -48,23 +48,73 @@ activity <- mutate(activity, date = ymd(date))
 
 
 ## What is mean total number of steps taken per day?
-```{r}
+```{r dailysteps}
 # Get an atomic vector of daily steps, NAs removed
-dailysteps <- activity %>% 
+dailysteps <- activity %>%
   group_by(date) %>% 
+  select(-interval) %>%
   summarise_each(funs(sum)) %>% 
   select(steps) %>% 
   unlist %>% 
   na.omit
 ```
+```{r}
+hist(dailysteps)
+mean(dailysteps)
+median(dailysteps)
+```
 
 
 ## What is the average daily activity pattern?
+```{r intervalsteps}
+# Compute average steps per interval
+intervalsteps <- activity %>%
+  group_by(interval) %>%
+  select(-date) %>%
+  na.omit %>%
+  summarise_each(funs(mean))
+```
+```{r}
+plot(steps ~ interval, type = "l", data = intervalsteps)
+intervalsteps$interval[which.max(intervalsteps$steps)]
+```
 
 
 
 ## Imputing missing values
+Number of rows with missing values:
+```{r}
+sum(!complete.cases(activity))
+```
+Impute missing values using the mean for that interval, as calculated in the previous section.
 
+see also: https://class.coursera.org/repdata-036/forum/thread?thread_id=100#post-408
+
+```{r}
+# Make a copy of the orignal data, then add imputed values
+imputed <- activity
+for (i in which(is.na(imputed$steps))) {
+  imputed$steps[i] <- 
+    intervalsteps$steps[match(imputed$interval[i], intervalsteps$interval)]
+}
+```
+
+```{r}
+imputedsteps <- imputed %>%
+  group_by(date) %>% 
+  select(-interval) %>%
+  summarise_each(funs(sum)) %>% 
+  select(steps) %>% 
+  unlist
+```
+```{r}
+hist(imputedsteps)
+```
+Because we are using mean interval values to impute data, there now exists a median that happens to be exactly the same value as the mean.
+```{r}
+mean(imputedsteps)
+median(imputedsteps)
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?

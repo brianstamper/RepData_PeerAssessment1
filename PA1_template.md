@@ -1,7 +1,7 @@
 # Reproducible Research: Peer Assessment 1
 
 ## Preliminary steps
-Before working with the data, I'm going to set some display optins for this document and load some libraries.
+Before working with the data, I'm going to set some display options for this document and load some libraries.
 
 ```r
 library(knitr) # Adding this here makes RStudio's Knit HTML button work
@@ -10,34 +10,22 @@ library(knitr) # Adding this here makes RStudio's Knit HTML button work
 # https://class.coursera.org/repdata-036/forum/thread?thread_id=83
 opts_chunk$set(echo = TRUE,
                message = FALSE, warning = FALSE,
-               cache = FALSE#,
-               #cache.path = "cache/", 
-               #fig.path = "figure/"
+               cache = FALSE,#, # maybe make this true in the end?
+               cache.path = "cache/", 
+               fig.path = "figure/"
                )
-
-library(dplyr)
 ```
 
-```
-## 
-## Attaching package: 'dplyr'
-## 
-## The following objects are masked from 'package:stats':
-## 
-##     filter, lag
-## 
-## The following objects are masked from 'package:base':
-## 
-##     intersect, setdiff, setequal, union
-```
 
 ```r
+library(dplyr)
 library(lubridate)
 ```
 
 ## Loading and preprocessing the data
 
 ```r
+# Get the data, if needed.
 if (!file.exists("activity.csv")) {
   if (!file.exists("activity.zip")) {
     url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
@@ -50,20 +38,131 @@ unzip(zipfile = "activity.zip")
 
 # Missing values are correctly handled by default 'NA',
 # but dates need will be forced to strings and then converted
+# using dplyr and lubridate.
 activity <- read.csv("activity.csv", stringsAsFactors = FALSE)
+activity <- mutate(activity, date = ymd(date))
 ```
 
 
 ## What is mean total number of steps taken per day?
 
+```r
+# Get an atomic vector of daily steps, NAs removed
+dailysteps <- activity %>%
+  group_by(date) %>% 
+  select(-interval) %>%
+  summarise_each(funs(sum)) %>% 
+  select(steps) %>% 
+  unlist %>% 
+  na.omit
+```
+
+```r
+hist(dailysteps)
+```
+
+![](figure/unnamed-chunk-2-1.png) 
+
+```r
+mean(dailysteps)
+```
+
+```
+## [1] 10766.19
+```
+
+```r
+median(dailysteps)
+```
+
+```
+## [1] 10765
+```
 
 
 ## What is the average daily activity pattern?
 
+```r
+# Compute average steps per interval
+intervalsteps <- activity %>%
+  group_by(interval) %>%
+  select(-date) %>%
+  na.omit %>%
+  summarise_each(funs(mean))
+```
+
+```r
+plot(steps ~ interval, type = "l", data = intervalsteps)
+```
+
+![](figure/unnamed-chunk-3-1.png) 
+
+```r
+intervalsteps$interval[which.max(intervalsteps$steps)]
+```
+
+```
+## [1] 835
+```
+
 
 
 ## Imputing missing values
+Number of rows with missing values:
 
+```r
+sum(!complete.cases(activity))
+```
+
+```
+## [1] 2304
+```
+Impute missing values using the mean for that interval, as calculated in the previous section.
+
+see also: https://class.coursera.org/repdata-036/forum/thread?thread_id=100#post-408
+
+
+```r
+# Make a copy of the orignal data, then add imputed values
+imputed <- activity
+for (i in which(is.na(imputed$steps))) {
+  imputed$steps[i] <- 
+    intervalsteps$steps[match(imputed$interval[i], intervalsteps$interval)]
+}
+```
+
+
+```r
+imputedsteps <- imputed %>%
+  group_by(date) %>% 
+  select(-interval) %>%
+  summarise_each(funs(sum)) %>% 
+  select(steps) %>% 
+  unlist
+```
+
+```r
+hist(imputedsteps)
+```
+
+![](figure/unnamed-chunk-7-1.png) 
+Because we are using mean interval values to impute data, there now exists a median that happens to be exactly the same value as the mean.
+
+```r
+mean(imputedsteps)
+```
+
+```
+## [1] 10766.19
+```
+
+```r
+median(imputedsteps)
+```
+
+```
+## [1] 10766.19
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
