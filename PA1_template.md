@@ -6,8 +6,7 @@ Before working with the data, I'm going to set some display options for this doc
 ```r
 library(knitr) # Adding this here makes RStudio's Knit HTML button work
 
-# Need to check if this is necessary. From the forums
-# https://class.coursera.org/repdata-036/forum/thread?thread_id=83
+# Set some chunk options
 opts_chunk$set(echo = TRUE,
                message = FALSE, warning = FALSE,
                cache = FALSE,#, # maybe make this true in the end?
@@ -37,7 +36,7 @@ unzip(zipfile = "activity.zip")
 }
 
 # Missing values are correctly handled by default 'NA',
-# but dates need will be forced to strings and then converted
+# but dates need to be forced to strings and then converted
 # using dplyr and lubridate.
 activity <- read.csv("activity.csv", stringsAsFactors = FALSE)
 activity <- mutate(activity, date = ymd(date))
@@ -57,11 +56,14 @@ dailysteps <- activity %>%
   na.omit
 ```
 
+
 ```r
-hist(dailysteps)
+hist(dailysteps, main = "Total number of steps taken each day")
 ```
 
 ![](figure/unnamed-chunk-2-1.png) 
+
+### Mean and median number of steps taken each day
 
 ```r
 mean(dailysteps)
@@ -91,11 +93,15 @@ intervalsteps <- activity %>%
   summarise_each(funs(mean))
 ```
 
+### Time series plot of the average number of steps taken (averaged across all days) versus the 5-minute intervals
+
 ```r
 plot(steps ~ interval, type = "l", data = intervalsteps)
 ```
 
-![](figure/unnamed-chunk-3-1.png) 
+![](figure/unnamed-chunk-4-1.png) 
+
+### 5-minute interval that on average contains the maximum number of steps
 
 ```r
 intervalsteps$interval[which.max(intervalsteps$steps)]
@@ -104,8 +110,6 @@ intervalsteps$interval[which.max(intervalsteps$steps)]
 ```
 ## [1] 835
 ```
-
-
 
 ## Imputing missing values
 Number of rows with missing values:
@@ -117,13 +121,13 @@ sum(!complete.cases(activity))
 ```
 ## [1] 2304
 ```
-Impute missing values using the mean for that interval, as calculated in the previous section.
 
-see also: https://class.coursera.org/repdata-036/forum/thread?thread_id=100#post-408
-
+We will impute missing values using the mean for that interval, as calculated in the previous section.
 
 ```r
-# Make a copy of the orignal data, then add imputed values
+# Make a copy of the orignal data, then add imputed
+# values whenever the current value is NA. Use the
+# data frame intervalsteps to look up the mean values.
 imputed <- activity
 for (i in which(is.na(imputed$steps))) {
   imputed$steps[i] <- 
@@ -131,6 +135,7 @@ for (i in which(is.na(imputed$steps))) {
 }
 ```
 
+### Histogram of total steps after adding imputed values
 
 ```r
 imputedsteps <- imputed %>%
@@ -145,7 +150,7 @@ imputedsteps <- imputed %>%
 hist(imputedsteps)
 ```
 
-![](figure/unnamed-chunk-7-1.png) 
+![](figure/unnamed-chunk-9-1.png) 
 Because we are using mean interval values to impute data, there now exists a median that happens to be exactly the same value as the mean.
 
 ```r
