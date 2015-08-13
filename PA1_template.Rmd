@@ -128,3 +128,4 @@ median(imputedsteps)
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+imputed <- mutate(imputed, weekend = (weekdays(date) %in% c("Sunday", "Saturday")))
