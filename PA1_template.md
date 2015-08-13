@@ -19,6 +19,7 @@ opts_chunk$set(echo = TRUE,
 ```r
 library(dplyr)
 library(lubridate)
+library(lattice)
 ```
 
 ## Loading and preprocessing the data
@@ -58,7 +59,7 @@ dailysteps <- activity %>%
 
 
 ```r
-hist(dailysteps, main = "Total number of steps taken each day")
+histogram(dailysteps, main = "Total number of steps taken each day")
 ```
 
 ![](figure/unnamed-chunk-2-1.png) 
@@ -96,7 +97,7 @@ intervalsteps <- activity %>%
 ### Time series plot of the average number of steps taken (averaged across all days) versus the 5-minute intervals
 
 ```r
-plot(steps ~ interval, type = "l", data = intervalsteps)
+xyplot(steps ~ interval, type = "l", data = intervalsteps)
 ```
 
 ![](figure/unnamed-chunk-4-1.png) 
@@ -147,10 +148,11 @@ imputedsteps <- imputed %>%
 ```
 
 ```r
-hist(imputedsteps)
+histogram(imputedsteps, main = "Total number of steps taken each day, with imputed values")
 ```
 
 ![](figure/unnamed-chunk-9-1.png) 
+
 Because we are using mean interval values to impute data, there now exists a median that happens to be exactly the same value as the mean.
 
 ```r
@@ -171,3 +173,22 @@ median(imputedsteps)
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```r
+# Add a factor variable for weekend/weekday
+imputed <- mutate(imputed, weekend = 
+                    ifelse(weekdays(date) %in% c("Sunday", "Saturday"), "weekend", "weekday"))
+# Compute average steps per interval, keeping weekend factor variable
+weekendsteps <- imputed %>%
+  group_by(interval, weekend) %>%
+  select(-date) %>%
+  na.omit %>%
+  summarise_each(funs(mean))
+```
+### Time series plot of the average number of steps taken (averaged across all days) versus the 5-minute intervals, comparing weekdays to weekends
+
+```r
+xyplot(steps ~ interval|weekend, type = "l", data = weekendsteps, layout=c(1, 2))
+```
+
+![](figure/unnamed-chunk-11-1.png) 
