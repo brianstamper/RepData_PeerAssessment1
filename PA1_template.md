@@ -192,3 +192,4 @@ xyplot(steps ~ interval|weekend, type = "l", data = weekendsteps, layout=c(1, 2)
 ```
 
 ![](figure/unnamed-chunk-11-1.png) 
+

@@ -13,7 +13,7 @@ library(knitr) # Adding this here makes RStudio's Knit HTML button work
 # Set some chunk options
 opts_chunk$set(echo = TRUE,
                message = FALSE, warning = FALSE,
-               cache = FALSE,#, # maybe make this true in the end?
+               cache = TRUE,
                cache.path = "cache/", 
                fig.path = "figure/"
                )
